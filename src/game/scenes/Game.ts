@@ -38,24 +38,6 @@ export class Game extends Scene {
     };
   }
   
-  // Simple rectangle bounds check for butterfly drawing area
-  isInsideButterflyArea(x: number, y: number): boolean {
-    // Get local coordinates relative to container
-    const local = this.worldToLocal(x, y);
-    
-    // Define the butterfly drawing area bounds in local coordinates
-    const bounds = {
-      left: -200,   // Half width 
-      right: 200,   // Half width
-      top: -150,    // Half height
-      bottom: 150   // Half height
-    };
-    
-    // Check if point is inside the bounds
-    return local.x >= bounds.left && local.x <= bounds.right && 
-           local.y >= bounds.top && local.y <= bounds.bottom;
-  }
-  
   /**
    * Draw function to handle brush painting
    */
@@ -86,40 +68,69 @@ export class Game extends Scene {
   // Track the total area drawn so far
   private totalDrawnArea: number = 0;
   
+  /**
+   * Calculates how many pixels in the graphics object have the blue color (0x2776f4)
+   * @returns The number of blue pixels
+   */
+  calculateBluePixel(): number {
+    // Create a temporary object to store the pixel count (to use inside the snapshot callback)
+    const result = { bluePixelCount: 0 };
+    
+    // Create a render texture to capture graphics content
+    const renderTexture = this.add.renderTexture(0, 0, 800, 600);
+    renderTexture.setVisible(false);
+    
+    // Draw the graphics to the render texture
+    renderTexture.draw(this.graphics);
+    
+    // Use snapshot to get image data
+    renderTexture.snapshot((snapshot) => {
+      // Create a temporary canvas for pixel analysis
+      const canvas = document.createElement('canvas');
+      canvas.width = renderTexture.width;
+      canvas.height = renderTexture.height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      // Draw the snapshot to canvas
+      ctx.drawImage(snapshot as HTMLImageElement, 0, 0);
+      
+      // Get pixel data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Target color components (0x2776f4)
+      const targetR = (0x2776f4 >> 16) & 0xFF; // 39
+      const targetG = (0x2776f4 >> 8) & 0xFF;  // 118
+      const targetB = 0x2776f4 & 0xFF;         // 244
+      
+      // Count matching pixels
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        
+        if (a > 0 && r === targetR && g === targetG && b === targetB) {
+          result.bluePixelCount++;
+        }
+      }
+    });
+    
+    // Clean up
+    renderTexture.destroy();
+    
+    return result.bluePixelCount;
+  }
+  
   // Method to calculate and track the butterfly coloring completion
   checkCompletionPercentage() {
     if (this.drawingCompleted) return;
     
-    // Get the total butterfly area in square pixels
-    const butterflyWidth = 400;  // Approximate width of drawable butterfly area
-    const butterflyHeight = 300; // Approximate height of drawable butterfly area
-    const totalDrawableArea = butterflyWidth * butterflyHeight * 0.6; // Only ~60% of the area is actually drawable
+    const totalDrawableArea = 600000;
     
-    // Instead of analyzing the graphics object directly (which is complex),
-    // we'll accumulate drawing area as the user draws
-    
-    // In the most recent drawing operation, estimate the area covered by the stroke
-    // Each time we draw a line, we can approximate its area as length * width
-    // This calculation happens every time we call checkCompletionPercentage()
-    // after drawing a stroke
-    
-    // The approximate area of the most recently drawn line
-    const strokeWidth = 50; // Our line thickness
-    
-    // Estimate the length of the most recent stroke
-    // We know the start and end points of the line from lastX/Y and current points
-    const dx = this.lastX - this.prevX;
-    const dy = this.lastY - this.prevY;
-    const lineLength = Math.sqrt(dx * dx + dy * dy);
-    
-    // Area of this stroke
-    const strokeArea = lineLength * strokeWidth;
-    
-    // Add this to our running total
-    this.totalDrawnArea += strokeArea;
-    
-    // Calculate percentage of butterfly that's colored
-    let completionPercentage = Math.min(100, (this.totalDrawnArea / totalDrawableArea) * 100);
+    let completionPercentage = Math.min(100, ( this.calculateBluePixel()/ totalDrawableArea) * 100);
     
     console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (Area: ${this.totalDrawnArea.toFixed(0)}px²)`); 
     
@@ -161,17 +172,11 @@ export class Game extends Scene {
     
     // Handle mouse down
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      // Only start drawing if inside the butterfly area
-      if (this.isInsideButterflyArea(pointer.x, pointer.y)) {
         this.isDrawing = true;
-        
-        // Initialize both last and prev coordinates to the same point
-        // This ensures the first stroke has zero length (no area added yet)
         this.prevX = pointer.x;
         this.prevY = pointer.y;
         this.lastX = pointer.x;
         this.lastY = pointer.y;
-      }
     });
     
     // Handle mouse up
