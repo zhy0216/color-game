@@ -199,6 +199,18 @@ export class Game extends Scene {
 
     // fly.animationState.setAnimation(0, "hudie_born_1", false);
 
+
+    const max = this.add.spine(
+      445,
+      1010,
+      "max-data",
+      "max-atlas"
+    );
+    max.setScale(0.4)
+
+    max.animationState.setAnimation(0, "idle normal", true);
+
+
     this.game.events.on(State.DONE, () => {
       paper.animationState.setAnimation(0, "paper_go", false);
     })
@@ -228,5 +240,8 @@ export class Game extends Scene {
 
     this.load.spineJson("fly-data", "assets/spine_animations/fly.json");
     this.load.spineAtlas("fly-atlas", "assets/spine_animations/fly.atlas.txt");
+
+    this.load.spineBinary("max-data", "assets/spine_animations/max/people_Max_pal.skel.bytes");
+    this.load.spineAtlas("max-atlas", "assets/spine_animations/max/people_Max_pal.atlas.txt");
   }
 }
