@@ -81,76 +81,38 @@ export class Game extends Scene {
   checkCompletionPercentage() {
     if (this.drawingCompleted) return;
     
-    // Create a temporary canvas to analyze the drawing
-    const tempCanvas = document.createElement('canvas');
-    const tempContext = tempCanvas.getContext('2d');
-    if (!tempContext) return;
+    // Get the drawing coverage estimation directly from the graphics object
+    // We'll use the bounding box area as our total pixel count
+    const butterflyArea = 400 * 300; // Approximate total pixel area of the butterfly
     
-    // Set canvas dimensions to match our drawable area
-    tempCanvas.width = 400;  // Approximate width of butterfly area
-    tempCanvas.height = 300; // Approximate height of butterfly area
+    // Estimate the drawn area by using line segments and their thickness
+    let drawnArea = 0;
     
-    // Clear the canvas
-    tempContext.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-    
-    // We'll draw a blue rectangle for each drawing command the user has made
-    // This simulates what's actually drawn on screen without complex rendering
-    tempContext.fillStyle = '#2776f4'; // Our blue drawing color
-    
-    // Analyze the graphics command buffer to approximate what's drawn
-    const commandBuffer = this.graphics.commandBuffer;
-    let drawCount = 0;
-    
-    if (commandBuffer) {
-      // Process each drawing command
-      for (let i = 0; i < commandBuffer.length; i++) {
-        // Each command to draw a line covers approximately a circular area
-        // We'll represent this as filled circles
-        drawCount++;
-        
-        // Draw a circle representing the brush stroke
-        tempContext.beginPath();
-        tempContext.arc(
-          100 + Math.random() * 200, // Random x within canvas
-          100 + Math.random() * 100, // Random y within canvas
-          20, // Radius
-          0,
-          Math.PI * 2
-        );
-        tempContext.fill();
-      }
-    }
-    
-    // Get image data for analysis
-    const imageData = tempContext.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-    const data = imageData.data;
-    
-    // Count total pixels and colored pixels
-    let totalPixels = 0;
-    let coloredPixels = 0;
-    
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const a = data[i + 3];
+    if (this.graphics.commandBuffer) {
+      const lineCommands = this.graphics.commandBuffer.filter(cmd => {
+        // Filter for drawing commands - this is an approximation
+        // In Phaser's graphics, line drawing operations typically have these commands
+        return cmd && typeof cmd === 'object' && 'lineStyle' in cmd;
+      });
       
-      if (a > 0) { // If the pixel is not transparent
-        totalPixels++;
-        
-        // Check if it's our blue color (approximately)
-        if (b > 100 && r < 100 && g < 100) {
-          coloredPixels++;
-        }
-      }
+      // Each line stroke with thickness 50 covers approximately this much area
+      const strokeWidth = 50;
+      const averageStrokeLength = 30; // Approximate pixel length of a typical stroke
+      
+      // Calculate the area covered by all strokes
+      drawnArea = lineCommands.length * strokeWidth * averageStrokeLength;
     }
     
-    // Calculate the percentage
-    // If we don't have any total pixels, set a reasonable default
-    if (totalPixels === 0) totalPixels = 1;
+    // Calculate the coverage percentage
+    const totalDrawableArea = butterflyArea * 0.6; // Assuming 60% of the butterfly area is drawable
+    let completionPercentage = Math.min(100, (drawnArea / totalDrawableArea) * 100);
     
-    const completionPercentage = (coloredPixels / totalPixels) * 100;
-    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (${coloredPixels}/${totalPixels} pixels)`);
+    // If we have drawing commands but calculation shows 0%, show at least 1%
+    if (completionPercentage === 0 && this.graphics.commandBuffer && this.graphics.commandBuffer.length > 0) {
+      completionPercentage = 1;
+    }
+    
+    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (Estimated area: ${drawnArea}px²)`); 
     
     // When we reach 90%, log done
     if (completionPercentage >= 90 && !this.drawingCompleted) {
