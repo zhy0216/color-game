@@ -1,4 +1,9 @@
 import { Scene } from 'phaser';
+import {countBluePixelsInSnapshot} from "./../utils"
+
+enum State {
+  DONE="DONE"
+}
 
 export class Game extends Scene {
   camera: Phaser.Cameras.Scene2D.Camera;
@@ -61,89 +66,32 @@ export class Game extends Scene {
    * @returns The number of blue pixels (actual count)
    */
   async calculateBluePixel() {
-    // We'll use the game's renderer to create a snapshot of our drawing area
-    // and then count the actual blue pixels
-    
-    // Create a temporary render texture
-    
-    // Target color components (0x2776f4)
     const targetR = (0x2776f4 >> 16) & 0xFF; // 39
     const targetG = (0x2776f4 >> 8) & 0xFF;  // 118
     const targetB = 0x2776f4 & 0xFF;         // 244
-    
-    // Create a counter object to store our result
-    const result = { bluePixelCount: 0 };
-    
-    // Use snapshot to get image data from a specific area where the butterfly is drawn
-    // Butterfly container is positioned at (1410, 450), but our graphics are drawn at local (0,0)
-    // Use the butterfly width and height to determine snapshot area
     const width = 920;
     const height = 700;
-    
-    // We can't directly count pixels inside the snapshot callback (result will be 0),
-    // so we need to manipulate the DOM synchronously
-    await new Promise(r => this.renderer.snapshotArea(750, 100, width, height, (image) => {
-      r(this.countBluePixelsInSnapshot(image as HTMLImageElement, targetR, targetG, targetB, result))
+    return new Promise<number>(r => this.renderer.snapshotArea(750, 100, width, height, (image) => {
+      r(countBluePixelsInSnapshot(image as HTMLImageElement, targetR, targetG, targetB))
     }));
-    
-    return result.bluePixelCount;
   }
   
-  /**
-   * Helper method to count blue pixels in a snapshot
-   */
-  private countBluePixelsInSnapshot(
-    snapshot: HTMLImageElement,
-    targetR: number,
-    targetG: number,
-    targetB: number,
-    result: { bluePixelCount: number }
-  ): void {
-    // Create a temporary canvas to analyze the image
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    // console.log("######### ctx:", ctx)
-    if (!ctx) return;
-    
-    // Set canvas dimensions
-    canvas.width = snapshot.width;
-    canvas.height = snapshot.height;
-    
-    // Draw snapshot to canvas
-    ctx.drawImage(snapshot, 0, 0);
-    
-    // Get image data
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    // Count blue pixels
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      
-      // Check if pixel matches our blue color with some tolerance for anti-aliasing
-      if (Math.abs(r - targetR) < 5 && 
-          Math.abs(g - targetG) < 5 && 
-          Math.abs(b - targetB) < 5) {
-        result.bluePixelCount++;
-      }
-    }
-  }
   
   // Method to calculate and track the butterfly coloring completion
   async checkCompletionPercentage() {
     if (this.drawingCompleted) return;
     
-    const totalDrawableArea = 360000;
+    const totalDrawableArea = 376876;
+    const drawed = await this.calculateBluePixel()
     // console.log("#### this.calculateBluePixel():", await this.calculateBluePixel())
-    let completionPercentage = Math.min(100, ( await this.calculateBluePixel()/ totalDrawableArea) * 100);
     
-    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (Area: ${totalDrawableArea.toFixed(0)}px²)`); 
+    console.log(`Drawing completion: ${drawed} / (Area: ${totalDrawableArea.toFixed(0)}px²)`); 
     
     // When we reach 90%, log done
-    if (completionPercentage >= 95 && !this.drawingCompleted) {
+    if (Math.abs(drawed - totalDrawableArea) < 50 && !this.drawingCompleted) {
       console.log('done');
       this.drawingCompleted = true;
+      this.game.events.emit(State.DONE);
     }
   }
   
@@ -251,6 +199,9 @@ export class Game extends Scene {
 
     // fly.animationState.setAnimation(0, "hudie_born_1", false);
 
+    this.game.events.on(State.DONE, () => {
+      paper.animationState.setAnimation(0, "paper_go", false);
+    })
 
     
   }
