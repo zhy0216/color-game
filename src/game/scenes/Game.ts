@@ -5,6 +5,8 @@ export class Game extends Scene {
   background: Phaser.GameObjects.Image;
   cursor: Phaser.GameObjects.Image;
   graphics: Phaser.GameObjects.Graphics;
+  drawingArea: Phaser.GameObjects.Image;
+  mask: Phaser.Display.Masks.BitmapMask;
   isDrawing: boolean = false;
 
   constructor() {
@@ -29,7 +31,7 @@ export class Game extends Scene {
     
     // Create graphics for drawing
     this.graphics = this.add.graphics();
-    this.graphics.setDepth(10); // Set depth to be above background but below cursor
+    this.graphics.setDepth(10);
     
     // Add custom cursor that follows pointer
     this.cursor = this.add.image(0, 0, 'blue-pen');
@@ -51,7 +53,7 @@ export class Game extends Scene {
     // Handle mouse down
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.isDrawing = true;
-      this.graphics.lineStyle(5, 0x0000ff); // Blue color with line width 5
+      this.graphics.lineStyle(50, 0x2776f4); // Blue color with line width 5
       this.graphics.beginPath();
       this.graphics.moveTo(pointer.x, pointer.y);
     });
@@ -91,8 +93,27 @@ export class Game extends Scene {
     paper.animationState.setAnimation(0, "paper_come", false);
 
     
+    // Set up the drawing area
     this.add.image(1410, 450, 'fly-drawing');
-    this.add.image(1410, 450, 'fly-overlay');
+    
+    // Set up the drawing structure
+    
+    // Create a mask using the butterfly outline
+    const maskImage = this.make.image({
+      x: 1410,
+      y: 450, 
+      key: 'fly-overlay',
+      add: false
+    });
+    
+    // Create bitmap mask from the butterfly image
+    this.mask = new Phaser.Display.Masks.BitmapMask(this, maskImage);
+    
+    // Apply mask to graphics
+    this.graphics.setMask(this.mask);
+    
+    // Show the butterfly overlay on top
+    this.add.image(1410, 450, 'fly-overlay').setDepth(15);
 
 
 
