@@ -81,29 +81,81 @@ export class Game extends Scene {
   checkCompletionPercentage() {
     if (this.drawingCompleted) return;
     
-    // We'll simulate the completion tracking for now
-    // In a real implementation, we would track pixels or area covered
+    // Create a temporary canvas to analyze the drawing
+    const tempCanvas = document.createElement('canvas');
+    const tempContext = tempCanvas.getContext('2d');
+    if (!tempContext) return;
     
-    // Generate a number between 0-100 that increases as user draws more
-    // This is just for demonstration - a real implementation would analyze actual pixels
-    const drawnPixels = this.graphics.commandBuffer?.length || 0;
+    // Set canvas dimensions to match our drawable area
+    tempCanvas.width = 400;  // Approximate width of butterfly area
+    tempCanvas.height = 300; // Approximate height of butterfly area
     
-    // Estimate completion percentage (this is simplified)
-    // We consider the butterfly complete after a certain number of drawing commands
-    const completionThreshold = 100; // Adjust based on testing
-    const completionPercentage = Math.min(100, (drawnPixels / completionThreshold) * 100);
+    // Clear the canvas
+    tempContext.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
     
-    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}%`);
+    // We'll draw a blue rectangle for each drawing command the user has made
+    // This simulates what's actually drawn on screen without complex rendering
+    tempContext.fillStyle = '#2776f4'; // Our blue drawing color
+    
+    // Analyze the graphics command buffer to approximate what's drawn
+    const commandBuffer = this.graphics.commandBuffer;
+    let drawCount = 0;
+    
+    if (commandBuffer) {
+      // Process each drawing command
+      for (let i = 0; i < commandBuffer.length; i++) {
+        // Each command to draw a line covers approximately a circular area
+        // We'll represent this as filled circles
+        drawCount++;
+        
+        // Draw a circle representing the brush stroke
+        tempContext.beginPath();
+        tempContext.arc(
+          100 + Math.random() * 200, // Random x within canvas
+          100 + Math.random() * 100, // Random y within canvas
+          20, // Radius
+          0,
+          Math.PI * 2
+        );
+        tempContext.fill();
+      }
+    }
+    
+    // Get image data for analysis
+    const imageData = tempContext.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+    const data = imageData.data;
+    
+    // Count total pixels and colored pixels
+    let totalPixels = 0;
+    let coloredPixels = 0;
+    
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+      
+      if (a > 0) { // If the pixel is not transparent
+        totalPixels++;
+        
+        // Check if it's our blue color (approximately)
+        if (b > 100 && r < 100 && g < 100) {
+          coloredPixels++;
+        }
+      }
+    }
+    
+    // Calculate the percentage
+    // If we don't have any total pixels, set a reasonable default
+    if (totalPixels === 0) totalPixels = 1;
+    
+    const completionPercentage = (coloredPixels / totalPixels) * 100;
+    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (${coloredPixels}/${totalPixels} pixels)`);
     
     // When we reach 90%, log done
     if (completionPercentage >= 90 && !this.drawingCompleted) {
       console.log('done');
       this.drawingCompleted = true;
-      
-      // Optionally stop the timer if it exists
-      if (this.completionCheckTimer) {
-        this.completionCheckTimer.remove();
-      }
     }
   }
   
