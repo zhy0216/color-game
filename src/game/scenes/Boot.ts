@@ -13,8 +13,16 @@ export class Boot extends Scene {
     // // Pond element - size: 1483x479, position: x:1233.5, y:-204.5
     this.load.image('pond', 'assets/Arts/Image/398.png');
 
+    this.load.image('fly-overlay', 'assets/Arts/fly_overlay.png');
+    this.load.image('fly-drawing', 'assets/Arts/Image/2208.png');
+
+
+
     this.load.spineJson("paper-data", "assets/spine_animations/paper.json");
     this.load.spineAtlas("paper-atlas", "assets/spine_animations/paper.atlas.txt");
+
+    this.load.spineJson("fly-data", "assets/spine_animations/fly.json");
+    this.load.spineAtlas("fly-atlas", "assets/spine_animations/fly.atlas.txt");
     // this.load.image('lily-pad', 'assets/Arts/Image/图层 174 拷贝荷叶.png');
     
     // // Environment elements - proper paths and correct asset values
