@@ -21,7 +21,7 @@ export class Game extends Scene {
    * Draw function to handle brush painting
    */
   draw(x: number, y: number): void {
-    this.graphics.clear();
+    // this.graphics.clear();
     this.graphics.lineStyle(50, 0x2776f4);
     this.graphics.beginPath();
     this.graphics.moveTo(this.lastX, this.lastY);
@@ -108,6 +108,8 @@ export class Game extends Scene {
     // First, add the drawing area base image (the fly without coloring)
     const flyDrawing = this.add.image(1410, 450, 'fly-drawing');
     flyDrawing.setDepth(5);
+
+    // this.add.image(1410, 405, 'fly-done').setDepth(20);;
     
     // Create a renderTexture that will be used for drawing
     // This needs to be the same size as your butterfly image
@@ -120,13 +122,14 @@ export class Game extends Scene {
     // Create mask with the butterfly outline
     const maskImage = this.make.image({
       x: 1410,
-      y: 450,
-      key: 'fly-overlay',
+      y: 405,
+      key: 'fly-done',
       add: false
     });
     
     // Apply the mask to the renderTexture
     const mask = maskImage.createBitmapMask();
+    mask.invertAlpha = true; // Invert the mask so we draw only in transparent areas
     this.renderTexture.setMask(mask);
     
     // Show the butterfly overlay on top

@@ -15,6 +15,8 @@ export class Boot extends Scene {
 
     this.load.image('fly-overlay', 'assets/Arts/fly_overlay.png');
     this.load.image('fly-drawing', 'assets/Arts/Image/2208.png');
+    this.load.image('fly-done', 'assets/Arts/Image/fly-done.png');
+
     this.load.image('blue-pen', 'assets/Arts/Image/blue-pen.png');
     
 
