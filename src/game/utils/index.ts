@@ -42,3 +42,9 @@
     }
     return bluePixelCount
   }
+
+  export function delay(msecond: number) {
+    return new Promise((r) => {
+      setTimeout(r, msecond)
+    })
+  }

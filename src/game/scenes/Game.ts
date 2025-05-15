@@ -1,5 +1,5 @@
 import { Scene } from 'phaser';
-import {countBluePixelsInSnapshot} from "./../utils"
+import {countBluePixelsInSnapshot, delay} from "./../utils"
 
 enum State {
   DONE="DONE"
@@ -90,7 +90,7 @@ export class Game extends Scene {
     if ((totalDrawableArea - drawed  < 50 || totalDrawableArea < drawed) && !this.drawingCompleted) {
       console.log('done');
       this.drawingCompleted = true;
-      this.game.events.emit(State.DONE);
+      delay(200).then(() => this.game.events.emit(State.DONE))
     }
   }
   
@@ -187,18 +187,6 @@ export class Game extends Scene {
     flyDrawing.setDepth(15);
     flyOverlay.setDepth(15);
 
-
-
-    // const fly = this.add.spine(
-    //   245,
-    //   1010,
-    //   "fly-data",
-    //   "fly-atlas"
-    // );
-
-    // fly.animationState.setAnimation(0, "hudie_born_1", false);
-
-
     const max = this.add.spine(
       445,
       1010,
@@ -209,9 +197,10 @@ export class Game extends Scene {
 
     max.animationState.setAnimation(0, "idle normal", true);
 
-
     this.game.events.on(State.DONE, () => {
       paper.animationState.setAnimation(0, "paper_go", false);
+      this.container.destroy()
+      this.flyDoneAnimation()
       this.sound.play("0069");
     })
 
@@ -219,21 +208,25 @@ export class Game extends Scene {
       loop: true
     });
 
-    setTimeout(() => {
-      this.sound.play("0001");
-    }, 0)
+    delay(0).then(() => this.sound.play("0001"))
+    delay(2500).then(() => {
+      this.sound.play("0033")
+      delay(2500).then(() => this.sound.play("0034"))
+    })
+  }
 
-    setTimeout(() => {
-      this.sound.play("0033");
-      setTimeout(() => {
-        this.sound.play("0034");
-      }, 2500)
-    }, 2500)
+  flyDoneAnimation() {
+    const fly = this.add.spine(
+      245,
+      1010,
+      "fly-data",
+      "fly-atlas"
+    );
+    fly.animationState.setAnimation(0, "correct_hudie_1", false);
+    fly.animationState.setAnimation(1, "correct_hudie_2", false);
+    fly.animationState.setAnimation(2, "correct_hudie_3", false);
+    fly.animationState.setAnimation(3, "hudie_end", false);
 
-
-
-
-    
   }
 
   preload() {
