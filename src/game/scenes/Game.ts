@@ -16,19 +16,38 @@ export class Game extends Scene {
   private lastX: number = 0;
   private lastY: number = 0;
   
+  // Convert world coordinates to container-local coordinates
+  worldToLocal(x: number, y: number): {x: number, y: number} {
+    return {
+      x: x - 1410,  // Container's x position
+      y: y - 450    // Container's y position
+    };
+  }
+  
+  // Convert container-local coordinates to world coordinates
+  localToWorld(x: number, y: number): {x: number, y: number} {
+    return {
+      x: x + 1410,  // Container's x position
+      y: y + 450    // Container's y position
+    };
+  }
+  
   // Simple rectangle bounds check for butterfly drawing area
   isInsideButterflyArea(x: number, y: number): boolean {
-    // Define the butterfly drawing area bounds
+    // Get local coordinates relative to container
+    const local = this.worldToLocal(x, y);
+    
+    // Define the butterfly drawing area bounds in local coordinates
     const bounds = {
-      left: 1410 - 200,   // Butterfly center x - half width 
-      right: 1410 + 200,  // Butterfly center x + half width
-      top: 450 - 150,     // Butterfly center y - half height
-      bottom: 450 + 150   // Butterfly center y + half height
+      left: -200,   // Half width 
+      right: 200,   // Half width
+      top: -150,    // Half height
+      bottom: 150   // Half height
     };
     
     // Check if point is inside the bounds
-    return x >= bounds.left && x <= bounds.right && 
-           y >= bounds.top && y <= bounds.bottom;
+    return local.x >= bounds.left && local.x <= bounds.right && 
+           local.y >= bounds.top && local.y <= bounds.bottom;
   }
   
   /**
@@ -37,12 +56,17 @@ export class Game extends Scene {
   draw(x: number, y: number): void {
     // Only draw if point is inside butterfly area
     if (this.isInsideButterflyArea(x, y)) {
+      // Convert to local coordinates for drawing in the container
+      const localCurrent = this.worldToLocal(x, y);
+      const localLast = this.worldToLocal(this.lastX, this.lastY);
+      
       this.graphics.lineStyle(50, 0x2776f4);
       this.graphics.beginPath();
-      this.graphics.moveTo(this.lastX, this.lastY);
-      this.graphics.lineTo(x, y);
+      this.graphics.moveTo(localLast.x, localLast.y);
+      this.graphics.lineTo(localCurrent.x, localCurrent.y);
       this.graphics.strokePath();
       
+      // Store world coordinates for next draw call
       this.lastX = x;
       this.lastY = y;
     }
@@ -79,9 +103,12 @@ export class Game extends Scene {
     
     // Handle mouse down
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      this.isDrawing = true;
-      this.lastX = pointer.x;
-      this.lastY = pointer.y;
+      // Only start drawing if inside the butterfly area
+      if (this.isInsideButterflyArea(pointer.x, pointer.y)) {
+        this.isDrawing = true;
+        this.lastX = pointer.x;
+        this.lastY = pointer.y;
+      }
     });
     
     // Handle mouse up
@@ -130,7 +157,7 @@ export class Game extends Scene {
     
     // Create the butterfly outline for reference (not visible)
     this.maskImage = this.add.image(0, -45, 'fly-done');
-    this.maskImage.setVisible(false);
+    this.maskImage.setVisible(true);
     
     // Add the overlay on top
     const flyOverlay = this.add.image(0, 0, 'fly-overlay');
