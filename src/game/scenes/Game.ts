@@ -19,9 +19,9 @@ export class Game extends Scene {
     
     // Add custom cursor that follows pointer
     this.cursor = this.add.image(0, 0, 'blue-pen');
-    this.cursor.setOrigin(0, 1); // Set origin based on where the pen point is
+    this.cursor.setOrigin(0, 0); // Set origin based on where the pen point is
     this.cursor.setScale(0.5); // Scale down the pen image if needed
-    this.cursor.setRotation(90 * (Math.PI / 360)); // Rotate 270 degrees (convert to radians)
+    this.cursor.setRotation(5/4*Math.PI);
     
     // Make cursor follow the pointer
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
