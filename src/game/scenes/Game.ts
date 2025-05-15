@@ -4,9 +4,19 @@ export class Game extends Scene {
   camera: Phaser.Cameras.Scene2D.Camera;
   background: Phaser.GameObjects.Image;
   cursor: Phaser.GameObjects.Image;
+  graphics: Phaser.GameObjects.Graphics;
+  isDrawing: boolean = false;
 
   constructor() {
     super('Game');
+  }
+
+  /**
+   * Draw function to handle brush painting
+   */
+  draw(x: number, y: number): void {
+    this.graphics.lineTo(x, y);
+    this.graphics.strokePath();
   }
 
   create() {
@@ -16,6 +26,10 @@ export class Game extends Scene {
     this.camera = this.cameras.main;
     this.camera.x = -200
     this.camera.width = 3000
+    
+    // Create graphics for drawing
+    this.graphics = this.add.graphics();
+    this.graphics.setDepth(10); // Set depth to be above background but below cursor
     
     // Add custom cursor that follows pointer
     this.cursor = this.add.image(0, 0, 'blue-pen');
@@ -27,6 +41,24 @@ export class Game extends Scene {
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       this.cursor.x = pointer.x;
       this.cursor.y = pointer.y;
+      
+      // Draw if mouse button is down
+      if (this.isDrawing) {
+        this.draw(pointer.x, pointer.y);
+      }
+    });
+    
+    // Handle mouse down
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      this.isDrawing = true;
+      this.graphics.lineStyle(5, 0x0000ff); // Blue color with line width 5
+      this.graphics.beginPath();
+      this.graphics.moveTo(pointer.x, pointer.y);
+    });
+    
+    // Handle mouse up
+    this.input.on('pointerup', () => {
+      this.isDrawing = false;
     });
     
     // Ensure cursor is always on top
