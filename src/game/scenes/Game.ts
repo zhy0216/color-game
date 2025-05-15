@@ -6,7 +6,7 @@ export class Game extends Scene {
   cursor: Phaser.GameObjects.Image;
   graphics: Phaser.GameObjects.Graphics;
   drawingArea: Phaser.GameObjects.Image;
-  mask: Phaser.Display.Masks.BitmapMask;
+  maskImage: Phaser.GameObjects.Image;
   isDrawing: boolean = false;
 
   constructor() {
@@ -15,23 +15,37 @@ export class Game extends Scene {
 
   private lastX: number = 0;
   private lastY: number = 0;
-  private renderTexture: Phaser.GameObjects.RenderTexture;
+  
+  // Simple rectangle bounds check for butterfly drawing area
+  isInsideButterflyArea(x: number, y: number): boolean {
+    // Define the butterfly drawing area bounds
+    const bounds = {
+      left: 1410 - 200,   // Butterfly center x - half width 
+      right: 1410 + 200,  // Butterfly center x + half width
+      top: 450 - 150,     // Butterfly center y - half height
+      bottom: 450 + 150   // Butterfly center y + half height
+    };
+    
+    // Check if point is inside the bounds
+    return x >= bounds.left && x <= bounds.right && 
+           y >= bounds.top && y <= bounds.bottom;
+  }
   
   /**
    * Draw function to handle brush painting
    */
   draw(x: number, y: number): void {
-    // this.graphics.clear();
-    this.graphics.lineStyle(50, 0x2776f4);
-    this.graphics.beginPath();
-    this.graphics.moveTo(this.lastX, this.lastY);
-    this.graphics.lineTo(x, y);
-    this.graphics.strokePath();
-    
-    this.renderTexture.draw(this.graphics);
-    
-    this.lastX = x;
-    this.lastY = y;
+    // Only draw if point is inside butterfly area
+    if (this.isInsideButterflyArea(x, y)) {
+      this.graphics.lineStyle(50, 0x2776f4);
+      this.graphics.beginPath();
+      this.graphics.moveTo(this.lastX, this.lastY);
+      this.graphics.lineTo(x, y);
+      this.graphics.strokePath();
+      
+      this.lastX = x;
+      this.lastY = y;
+    }
   }
 
   create() {
@@ -105,35 +119,28 @@ export class Game extends Scene {
     paper.animationState.setAnimation(0, "paper_come", false);
 
     
-    // First, add the drawing area base image (the fly without coloring)
-    const flyDrawing = this.add.image(1410, 450, 'fly-drawing');
+    // Create a container for our butterfly drawing elements
+    const butterflyContainer = this.add.container(1410, 450);
+    
+    // Create the base image (blank butterfly)
+    const flyDrawing = this.add.image(0, 0, 'fly-drawing');
+    
+    // Create a masked graphics object for drawing
+    this.graphics = this.add.graphics();
+    
+    // Create the butterfly outline for reference (not visible)
+    this.maskImage = this.add.image(0, -45, 'fly-done');
+    this.maskImage.setVisible(false);
+    
+    // Add the overlay on top
+    const flyOverlay = this.add.image(0, 0, 'fly-overlay');
+    
+    // Add all elements to the container
+    butterflyContainer.add([flyDrawing, this.graphics, flyOverlay]);
+    
+    // Set depths to ensure proper layering
     flyDrawing.setDepth(5);
-
-    // this.add.image(1410, 405, 'fly-done').setDepth(20);;
-    
-    // Create a renderTexture that will be used for drawing
-    // This needs to be the same size as your butterfly image
-    this.renderTexture = this.add.renderTexture(1010, 150, 800, 600);
-    this.renderTexture.setDepth(10);
-    
-    // Clear the texture to transparent
-    this.renderTexture.clear();
-    
-    // Create mask with the butterfly outline
-    const maskImage = this.make.image({
-      x: 1410,
-      y: 405,
-      key: 'fly-done',
-      add: false
-    });
-    
-    // Apply the mask to the renderTexture
-    const mask = maskImage.createBitmapMask();
-    mask.invertAlpha = true; // Invert the mask so we draw only in transparent areas
-    this.renderTexture.setMask(mask);
-    
-    // Show the butterfly overlay on top
-    const flyOverlay = this.add.image(1410, 450, 'fly-overlay');
+    this.graphics.setDepth(10);
     flyOverlay.setDepth(15);
 
 
