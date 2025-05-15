@@ -8,6 +8,10 @@ export class Game extends Scene {
   drawingArea: Phaser.GameObjects.Image;
   maskImage: Phaser.GameObjects.Image;
   isDrawing: boolean = false;
+  completionCheckTimer: Phaser.Time.TimerEvent;
+  drawingCompleted: boolean = false;
+  totalDrawablePixels: number = 0;
+  drawingTexture: Phaser.GameObjects.RenderTexture;
 
   constructor() {
     super('Game');
@@ -68,8 +72,41 @@ export class Game extends Scene {
     // Store world coordinates for next draw call
     this.lastX = x;
     this.lastY = y;
+    
+    // Check completion after drawing
+    this.checkCompletionPercentage();
   }
 
+  // Method to calculate and track the butterfly coloring completion
+  checkCompletionPercentage() {
+    if (this.drawingCompleted) return;
+    
+    // We'll simulate the completion tracking for now
+    // In a real implementation, we would track pixels or area covered
+    
+    // Generate a number between 0-100 that increases as user draws more
+    // This is just for demonstration - a real implementation would analyze actual pixels
+    const drawnPixels = this.graphics.commandBuffer?.length || 0;
+    
+    // Estimate completion percentage (this is simplified)
+    // We consider the butterfly complete after a certain number of drawing commands
+    const completionThreshold = 100; // Adjust based on testing
+    const completionPercentage = Math.min(100, (drawnPixels / completionThreshold) * 100);
+    
+    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}%`);
+    
+    // When we reach 90%, log done
+    if (completionPercentage >= 90 && !this.drawingCompleted) {
+      console.log('done');
+      this.drawingCompleted = true;
+      
+      // Optionally stop the timer if it exists
+      if (this.completionCheckTimer) {
+        this.completionCheckTimer.remove();
+      }
+    }
+  }
+  
   create() {
     // Hide default cursor
     this.input.setDefaultCursor('none');
