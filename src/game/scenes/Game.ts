@@ -19,6 +19,8 @@ export class Game extends Scene {
 
   private lastX: number = 0;
   private lastY: number = 0;
+  private prevX: number = 0;
+  private prevY: number = 0;
   
   // Convert world coordinates to container-local coordinates
   worldToLocal(x: number, y: number): {x: number, y: number} {
@@ -69,6 +71,10 @@ export class Game extends Scene {
     this.graphics.lineTo(localCurrent.x, localCurrent.y);
     this.graphics.strokePath();
     
+    // Store previous coordinates for area calculation
+    this.prevX = this.lastX;
+    this.prevY = this.lastY;
+    
     // Store world coordinates for next draw call
     this.lastX = x;
     this.lastY = y;
@@ -77,42 +83,45 @@ export class Game extends Scene {
     this.checkCompletionPercentage();
   }
 
+  // Track the total area drawn so far
+  private totalDrawnArea: number = 0;
+  
   // Method to calculate and track the butterfly coloring completion
   checkCompletionPercentage() {
     if (this.drawingCompleted) return;
     
-    // Get the drawing coverage estimation directly from the graphics object
-    // We'll use the bounding box area as our total pixel count
-    const butterflyArea = 400 * 300; // Approximate total pixel area of the butterfly
+    // Get the total butterfly area in square pixels
+    const butterflyWidth = 400;  // Approximate width of drawable butterfly area
+    const butterflyHeight = 300; // Approximate height of drawable butterfly area
+    const totalDrawableArea = butterflyWidth * butterflyHeight * 0.6; // Only ~60% of the area is actually drawable
     
-    // Estimate the drawn area by using line segments and their thickness
-    let drawnArea = 0;
+    // Instead of analyzing the graphics object directly (which is complex),
+    // we'll accumulate drawing area as the user draws
     
-    if (this.graphics.commandBuffer) {
-      const lineCommands = this.graphics.commandBuffer.filter(cmd => {
-        // Filter for drawing commands - this is an approximation
-        // In Phaser's graphics, line drawing operations typically have these commands
-        return cmd && typeof cmd === 'object' && 'lineStyle' in cmd;
-      });
-      
-      // Each line stroke with thickness 50 covers approximately this much area
-      const strokeWidth = 50;
-      const averageStrokeLength = 30; // Approximate pixel length of a typical stroke
-      
-      // Calculate the area covered by all strokes
-      drawnArea = lineCommands.length * strokeWidth * averageStrokeLength;
-    }
+    // In the most recent drawing operation, estimate the area covered by the stroke
+    // Each time we draw a line, we can approximate its area as length * width
+    // This calculation happens every time we call checkCompletionPercentage()
+    // after drawing a stroke
     
-    // Calculate the coverage percentage
-    const totalDrawableArea = butterflyArea * 0.6; // Assuming 60% of the butterfly area is drawable
-    let completionPercentage = Math.min(100, (drawnArea / totalDrawableArea) * 100);
+    // The approximate area of the most recently drawn line
+    const strokeWidth = 50; // Our line thickness
     
-    // If we have drawing commands but calculation shows 0%, show at least 1%
-    if (completionPercentage === 0 && this.graphics.commandBuffer && this.graphics.commandBuffer.length > 0) {
-      completionPercentage = 1;
-    }
+    // Estimate the length of the most recent stroke
+    // We know the start and end points of the line from lastX/Y and current points
+    const dx = this.lastX - this.prevX;
+    const dy = this.lastY - this.prevY;
+    const lineLength = Math.sqrt(dx * dx + dy * dy);
     
-    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (Estimated area: ${drawnArea}px²)`); 
+    // Area of this stroke
+    const strokeArea = lineLength * strokeWidth;
+    
+    // Add this to our running total
+    this.totalDrawnArea += strokeArea;
+    
+    // Calculate percentage of butterfly that's colored
+    let completionPercentage = Math.min(100, (this.totalDrawnArea / totalDrawableArea) * 100);
+    
+    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (Area: ${this.totalDrawnArea.toFixed(0)}px²)`); 
     
     // When we reach 90%, log done
     if (completionPercentage >= 90 && !this.drawingCompleted) {
@@ -155,6 +164,11 @@ export class Game extends Scene {
       // Only start drawing if inside the butterfly area
       if (this.isInsideButterflyArea(pointer.x, pointer.y)) {
         this.isDrawing = true;
+        
+        // Initialize both last and prev coordinates to the same point
+        // This ensures the first stroke has zero length (no area added yet)
+        this.prevX = pointer.x;
+        this.prevY = pointer.y;
         this.lastX = pointer.x;
         this.lastY = pointer.y;
       }
