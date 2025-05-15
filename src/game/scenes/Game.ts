@@ -55,21 +55,19 @@ export class Game extends Scene {
    */
   draw(x: number, y: number): void {
     // Only draw if point is inside butterfly area
-    if (this.isInsideButterflyArea(x, y)) {
-      // Convert to local coordinates for drawing in the container
-      const localCurrent = this.worldToLocal(x, y);
-      const localLast = this.worldToLocal(this.lastX, this.lastY);
-      
-      this.graphics.lineStyle(50, 0x2776f4);
-      this.graphics.beginPath();
-      this.graphics.moveTo(localLast.x, localLast.y);
-      this.graphics.lineTo(localCurrent.x, localCurrent.y);
-      this.graphics.strokePath();
-      
-      // Store world coordinates for next draw call
-      this.lastX = x;
-      this.lastY = y;
-    }
+    // Convert to local coordinates for drawing in the container
+    const localCurrent = this.worldToLocal(x, y);
+    const localLast = this.worldToLocal(this.lastX, this.lastY);
+    
+    this.graphics.lineStyle(50, 0x2776f4);
+    this.graphics.beginPath();
+    this.graphics.moveTo(localLast.x, localLast.y);
+    this.graphics.lineTo(localCurrent.x, localCurrent.y);
+    this.graphics.strokePath();
+    
+    // Store world coordinates for next draw call
+    this.lastX = x;
+    this.lastY = y;
   }
 
   create() {
@@ -144,8 +142,6 @@ export class Game extends Scene {
     );
 
     paper.animationState.setAnimation(0, "paper_come", false);
-
-    
     // Create a container for our butterfly drawing elements
     const butterflyContainer = this.add.container(1410, 450);
     
@@ -156,18 +152,18 @@ export class Game extends Scene {
     this.graphics = this.add.graphics();
     
     // Create the butterfly outline for reference (not visible)
-    this.maskImage = this.add.image(0, -45, 'fly-done');
-    this.maskImage.setVisible(true);
-    
+    const shape = this.add.image( 1410, 405, 'fly-done').setVisible(false);
+    const mask = shape.createBitmapMask();
     // Add the overlay on top
     const flyOverlay = this.add.image(0, 0, 'fly-overlay');
     
     // Add all elements to the container
-    butterflyContainer.add([flyDrawing, this.graphics, flyOverlay]);
+    butterflyContainer.add([this.graphics, flyDrawing, flyOverlay]);
+    this.graphics.mask = mask;
     
     // Set depths to ensure proper layering
-    flyDrawing.setDepth(5);
     this.graphics.setDepth(10);
+    flyDrawing.setDepth(15);
     flyOverlay.setDepth(15);
 
 
