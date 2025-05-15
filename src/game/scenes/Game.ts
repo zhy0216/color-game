@@ -87,8 +87,7 @@ export class Game extends Scene {
     
     console.log(`Drawing completion: ${drawed} / (Area: ${totalDrawableArea.toFixed(0)}px²)`); 
     
-    // When we reach 90%, log done
-    if (Math.abs(drawed - totalDrawableArea) < 50 && !this.drawingCompleted) {
+    if ((totalDrawableArea - drawed  < 50 || totalDrawableArea < drawed) && !this.drawingCompleted) {
       console.log('done');
       this.drawingCompleted = true;
       this.game.events.emit(State.DONE);
@@ -213,7 +212,26 @@ export class Game extends Scene {
 
     this.game.events.on(State.DONE, () => {
       paper.animationState.setAnimation(0, "paper_go", false);
+      this.sound.play("0069");
     })
+
+    this.sound.play("Scene1", {
+      loop: true
+    });
+
+    setTimeout(() => {
+      this.sound.play("0001");
+    }, 0)
+
+    setTimeout(() => {
+      this.sound.play("0033");
+      setTimeout(() => {
+        this.sound.play("0034");
+      }, 2500)
+    }, 2500)
+
+
+
 
     
   }
@@ -233,8 +251,6 @@ export class Game extends Scene {
     this.load.image('blue-pen', 'assets/Arts/Image/blue-pen.png');
     
 
-
-
     this.load.spineJson("paper-data", "assets/spine_animations/paper.json");
     this.load.spineAtlas("paper-atlas", "assets/spine_animations/paper.atlas.txt");
 
@@ -243,5 +259,17 @@ export class Game extends Scene {
 
     this.load.spineBinary("max-data", "assets/spine_animations/max/people_Max_pal.skel.bytes");
     this.load.spineAtlas("max-atlas", "assets/spine_animations/max/people_Max_pal.atlas.txt");
+    this.load.audio("Scene1", "assets/Sounds/BGM/mp3/Scene1.mp3");
+
+    this.load.audio("0001", "assets/Sounds/VO/0001.wav");
+    this.load.audio("0002", "assets/Sounds/VO/0002.wav");
+    this.load.audio("0033", "assets/Sounds/VO/0033.wav");
+    this.load.audio("0034", "assets/Sounds/VO/0034.wav");
+    this.load.audio("0069", "assets/Sounds/VO/0069.wav");
+
+
+
+
+
   }
 }
