@@ -12,6 +12,9 @@ export class Boot extends Scene {
     
     // // Pond element - size: 1483x479, position: x:1233.5, y:-204.5
     this.load.image('pond', 'assets/Arts/Image/398.png');
+
+    this.load.spineJson("paper-data", "assets/spine_animations/paper.json");
+    this.load.spineAtlas("paper-atlas", "assets/spine_animations/paper.atlas.txt");
     // this.load.image('lily-pad', 'assets/Arts/Image/图层 174 拷贝荷叶.png');
     
     // // Environment elements - proper paths and correct asset values

@@ -29,6 +29,16 @@ export class Game extends Scene {
     // // Pond element - size: 1483x479, position: x:1233.5, y:-204.5
     const pond = this.add.image(2800, 700, 'pond');
     pond.setScale(1);
+
+    const paper = this.add.spine(
+      245,
+      1010,
+      "paper-data",
+      "paper-atlas"
+    );
+
+    paper.scale = 1;
+    paper.animationState.setAnimation(0, "paper_come", false);
     
     // // Add some lily pads to the pond
     // this.add.image(1350, 730, 'lily-pad').setScale(0.7);
