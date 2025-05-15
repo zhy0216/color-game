@@ -9,6 +9,9 @@ export class Game extends Scene {
   }
 
   create() {
+    // Setup custom cursor
+    this.input.setDefaultCursor('url(assets/Arts/Image/blue-pen.png), pointer');
+    
     this.camera = this.cameras.main;
     this.camera.x = -200
     this.camera.width = 3000
