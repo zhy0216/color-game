@@ -3,18 +3,33 @@ import { Scene, Cameras } from 'phaser';
 export class Game extends Scene {
   camera: Phaser.Cameras.Scene2D.Camera;
   background: Phaser.GameObjects.Image;
+  cursor: Phaser.GameObjects.Image;
 
   constructor() {
     super('Game');
   }
 
   create() {
-    // Setup custom cursor
-    this.input.setDefaultCursor('url(assets/Arts/Image/blue-pen.png), pointer');
+    // Hide default cursor
+    this.input.setDefaultCursor('none');
     
     this.camera = this.cameras.main;
     this.camera.x = -200
     this.camera.width = 3000
+    
+    // Add custom cursor that follows pointer
+    this.cursor = this.add.image(0, 0, 'blue-pen');
+    this.cursor.setOrigin(0, 1); // Set origin based on where the pen point is
+    this.cursor.setScale(0.5); // Scale down the pen image if needed
+    
+    // Make cursor follow the pointer
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      this.cursor.x = pointer.x;
+      this.cursor.y = pointer.y;
+    });
+    
+    // Ensure cursor is always on top
+    this.cursor.setDepth(1000);
 
     // Add the background layers in correct order with proper positioning based on lesson_colors_psd.asset
     
@@ -48,14 +63,14 @@ export class Game extends Scene {
 
 
 
-    const fly = this.add.spine(
-      245,
-      1010,
-      "fly-data",
-      "fly-atlas"
-    );
+    // const fly = this.add.spine(
+    //   245,
+    //   1010,
+    //   "fly-data",
+    //   "fly-atlas"
+    // );
 
-    fly.animationState.setAnimation(0, "hudie_born_1", false);
+    // fly.animationState.setAnimation(0, "hudie_born_1", false);
 
 
     
