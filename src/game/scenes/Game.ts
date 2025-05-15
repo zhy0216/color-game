@@ -1,4 +1,4 @@
-import { Scene, Cameras } from 'phaser';
+import { Scene } from 'phaser';
 
 export class Game extends Scene {
   camera: Phaser.Cameras.Scene2D.Camera;
@@ -10,8 +10,6 @@ export class Game extends Scene {
   isDrawing: boolean = false;
   completionCheckTimer: Phaser.Time.TimerEvent;
   drawingCompleted: boolean = false;
-  totalDrawablePixels: number = 0;
-  drawingTexture: Phaser.GameObjects.RenderTexture;
 
   constructor() {
     super('Game');
@@ -19,8 +17,6 @@ export class Game extends Scene {
 
   private lastX: number = 0;
   private lastY: number = 0;
-  private prevX: number = 0;
-  private prevY: number = 0;
   
   // Convert world coordinates to container-local coordinates
   worldToLocal(x: number, y: number): {x: number, y: number} {
@@ -52,11 +48,6 @@ export class Game extends Scene {
     this.graphics.moveTo(localLast.x, localLast.y);
     this.graphics.lineTo(localCurrent.x, localCurrent.y);
     this.graphics.strokePath();
-    
-    // Store previous coordinates for area calculation
-    this.prevX = this.lastX;
-    this.prevY = this.lastY;
-    
     // Store world coordinates for next draw call
     this.lastX = x;
     this.lastY = y;
@@ -173,8 +164,6 @@ export class Game extends Scene {
     // Handle mouse down
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         this.isDrawing = true;
-        this.prevX = pointer.x;
-        this.prevY = pointer.y;
         this.lastX = pointer.x;
         this.lastY = pointer.y;
     });
@@ -249,5 +238,29 @@ export class Game extends Scene {
 
 
     
+  }
+
+  preload() {
+    this.load.image('background-base', 'assets/Arts/Image/265.png');
+    this.load.image('background-middle', 'assets/Arts/Image/269.png');
+    this.load.image('background-foreground', 'assets/Arts/Image/274.png');
+    
+    // // Pond element - size: 1483x479, position: x:1233.5, y:-204.5
+    this.load.image('pond', 'assets/Arts/Image/398.png');
+
+    this.load.image('fly-overlay', 'assets/Arts/fly_overlay.png');
+    this.load.image('fly-drawing', 'assets/Arts/Image/2208.png');
+    this.load.image('fly-done', 'assets/Arts/Image/fly-done.png');
+
+    this.load.image('blue-pen', 'assets/Arts/Image/blue-pen.png');
+    
+
+
+
+    this.load.spineJson("paper-data", "assets/spine_animations/paper.json");
+    this.load.spineAtlas("paper-atlas", "assets/spine_animations/paper.atlas.txt");
+
+    this.load.spineJson("fly-data", "assets/spine_animations/fly.json");
+    this.load.spineAtlas("fly-atlas", "assets/spine_animations/fly.atlas.txt");
   }
 }

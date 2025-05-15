@@ -1,7 +1,5 @@
-import { Boot } from './scenes/Boot';
 import { Game as MainGame } from './scenes/Game';
 import { AUTO, Game } from 'phaser';
-import { Preloader } from './scenes/Preloader';
 import * as spine from "@esotericsoftware/spine-phaser"
 
 
@@ -14,7 +12,7 @@ const config: Phaser.Types.Core.GameConfig = {
   zoom: 0.4,
   parent: 'game-container',
   backgroundColor: '#028af8',
-  scene: [Boot, Preloader, MainGame],
+  scene: [MainGame],
   plugins: {
     scene: [
         { key: "spine.SpinePlugin", plugin: spine.SpinePlugin, mapping: "spine" }
