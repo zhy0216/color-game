@@ -2,6 +2,8 @@ import { Scene } from 'phaser';
 import {countBluePixelsInSnapshot, delay} from "./../utils"
 
 enum State {
+  STARTED="STARTED",
+  START_DRAW="START_DRAW",
   DONE="DONE"
 }
 
@@ -59,6 +61,21 @@ export class Game extends Scene {
     
     // Check completion after drawing
     this.checkCompletionPercentage();
+  }
+
+  // TODO
+  setupStartedGame() {
+
+  }
+
+  // TODO
+  setupStartDrawGame() {
+
+  }
+
+  // TODO
+  setupDoneGame() {
+
   }
 
   /**
@@ -259,10 +276,5 @@ export class Game extends Scene {
     this.load.audio("0033", "assets/Sounds/VO/0033.wav");
     this.load.audio("0034", "assets/Sounds/VO/0034.wav");
     this.load.audio("0069", "assets/Sounds/VO/0069.wav");
-
-
-
-
-
   }
 }
