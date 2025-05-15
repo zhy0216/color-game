@@ -5,11 +5,11 @@ export class Game extends Scene {
   background: Phaser.GameObjects.Image;
   cursor: Phaser.GameObjects.Image;
   graphics: Phaser.GameObjects.Graphics;
-  drawingArea: Phaser.GameObjects.Image;
   maskImage: Phaser.GameObjects.Image;
   isDrawing: boolean = false;
   completionCheckTimer: Phaser.Time.TimerEvent;
   drawingCompleted: boolean = false;
+  container: Phaser.GameObjects.Container
 
   constructor() {
     super('Game');
@@ -56,77 +56,92 @@ export class Game extends Scene {
     this.checkCompletionPercentage();
   }
 
-  // Track the total area drawn so far
-  private totalDrawnArea: number = 0;
-  
   /**
    * Calculates how many pixels in the graphics object have the blue color (0x2776f4)
-   * @returns The number of blue pixels
+   * @returns The number of blue pixels (actual count)
    */
-  calculateBluePixel(): number {
-    // Create a temporary object to store the pixel count (to use inside the snapshot callback)
+  async calculateBluePixel() {
+    // We'll use the game's renderer to create a snapshot of our drawing area
+    // and then count the actual blue pixels
+    
+    // Create a temporary render texture
+    
+    // Target color components (0x2776f4)
+    const targetR = (0x2776f4 >> 16) & 0xFF; // 39
+    const targetG = (0x2776f4 >> 8) & 0xFF;  // 118
+    const targetB = 0x2776f4 & 0xFF;         // 244
+    
+    // Create a counter object to store our result
     const result = { bluePixelCount: 0 };
     
-    // Create a render texture to capture graphics content
-    const renderTexture = this.add.renderTexture(0, 0, 800, 600);
-    renderTexture.setVisible(false);
+    // Use snapshot to get image data from a specific area where the butterfly is drawn
+    // Butterfly container is positioned at (1410, 450), but our graphics are drawn at local (0,0)
+    // Use the butterfly width and height to determine snapshot area
+    const width = 920;
+    const height = 700;
     
-    // Draw the graphics to the render texture
-    renderTexture.draw(this.graphics);
-    
-    // Use snapshot to get image data
-    renderTexture.snapshot((snapshot) => {
-      // Create a temporary canvas for pixel analysis
-      const canvas = document.createElement('canvas');
-      canvas.width = renderTexture.width;
-      canvas.height = renderTexture.height;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      
-      // Draw the snapshot to canvas
-      ctx.drawImage(snapshot as HTMLImageElement, 0, 0);
-      
-      // Get pixel data
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      
-      // Target color components (0x2776f4)
-      const targetR = (0x2776f4 >> 16) & 0xFF; // 39
-      const targetG = (0x2776f4 >> 8) & 0xFF;  // 118
-      const targetB = 0x2776f4 & 0xFF;         // 244
-      
-      // Count matching pixels
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const a = data[i + 3];
-        
-        if (a > 0 && r === targetR && g === targetG && b === targetB) {
-          result.bluePixelCount++;
-        }
-      }
-    });
-    
-    // Clean up
-    renderTexture.destroy();
+    // We can't directly count pixels inside the snapshot callback (result will be 0),
+    // so we need to manipulate the DOM synchronously
+    await new Promise(r => this.renderer.snapshotArea(750, 100, width, height, (image) => {
+      r(this.countBluePixelsInSnapshot(image as HTMLImageElement, targetR, targetG, targetB, result))
+    }));
     
     return result.bluePixelCount;
   }
   
+  /**
+   * Helper method to count blue pixels in a snapshot
+   */
+  private countBluePixelsInSnapshot(
+    snapshot: HTMLImageElement,
+    targetR: number,
+    targetG: number,
+    targetB: number,
+    result: { bluePixelCount: number }
+  ): void {
+    // Create a temporary canvas to analyze the image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    // console.log("######### ctx:", ctx)
+    if (!ctx) return;
+    
+    // Set canvas dimensions
+    canvas.width = snapshot.width;
+    canvas.height = snapshot.height;
+    
+    // Draw snapshot to canvas
+    ctx.drawImage(snapshot, 0, 0);
+    
+    // Get image data
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    // Count blue pixels
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      
+      // Check if pixel matches our blue color with some tolerance for anti-aliasing
+      if (Math.abs(r - targetR) < 5 && 
+          Math.abs(g - targetG) < 5 && 
+          Math.abs(b - targetB) < 5) {
+        result.bluePixelCount++;
+      }
+    }
+  }
+  
   // Method to calculate and track the butterfly coloring completion
-  checkCompletionPercentage() {
+  async checkCompletionPercentage() {
     if (this.drawingCompleted) return;
     
-    const totalDrawableArea = 600000;
+    const totalDrawableArea = 360000;
+    // console.log("#### this.calculateBluePixel():", await this.calculateBluePixel())
+    let completionPercentage = Math.min(100, ( await this.calculateBluePixel()/ totalDrawableArea) * 100);
     
-    let completionPercentage = Math.min(100, ( this.calculateBluePixel()/ totalDrawableArea) * 100);
-    
-    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (Area: ${this.totalDrawnArea.toFixed(0)}px²)`); 
+    console.log(`Drawing completion: ${completionPercentage.toFixed(2)}% (Area: ${totalDrawableArea.toFixed(0)}px²)`); 
     
     // When we reach 90%, log done
-    if (completionPercentage >= 90 && !this.drawingCompleted) {
+    if (completionPercentage >= 95 && !this.drawingCompleted) {
       console.log('done');
       this.drawingCompleted = true;
     }
@@ -202,7 +217,7 @@ export class Game extends Scene {
 
     paper.animationState.setAnimation(0, "paper_come", false);
     // Create a container for our butterfly drawing elements
-    const butterflyContainer = this.add.container(1410, 450);
+    this.container = this.add.container(1410, 450);
     
     // Create the base image (blank butterfly)
     const flyDrawing = this.add.image(0, 0, 'fly-drawing');
@@ -217,7 +232,7 @@ export class Game extends Scene {
     const flyOverlay = this.add.image(0, 0, 'fly-overlay');
     
     // Add all elements to the container
-    butterflyContainer.add([this.graphics, flyDrawing, flyOverlay]);
+    this.container.add([this.graphics, flyDrawing, flyOverlay]);
     this.graphics.mask = mask;
     
     // Set depths to ensure proper layering
