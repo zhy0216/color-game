@@ -13,12 +13,25 @@ export class Game extends Scene {
     super('Game');
   }
 
+  private lastX: number = 0;
+  private lastY: number = 0;
+  private renderTexture: Phaser.GameObjects.RenderTexture;
+  
   /**
    * Draw function to handle brush painting
    */
   draw(x: number, y: number): void {
+    this.graphics.clear();
+    this.graphics.lineStyle(50, 0x2776f4);
+    this.graphics.beginPath();
+    this.graphics.moveTo(this.lastX, this.lastY);
     this.graphics.lineTo(x, y);
     this.graphics.strokePath();
+    
+    this.renderTexture.draw(this.graphics);
+    
+    this.lastX = x;
+    this.lastY = y;
   }
 
   create() {
@@ -53,9 +66,8 @@ export class Game extends Scene {
     // Handle mouse down
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.isDrawing = true;
-      this.graphics.lineStyle(50, 0x2776f4); // Blue color with line width 5
-      this.graphics.beginPath();
-      this.graphics.moveTo(pointer.x, pointer.y);
+      this.lastX = pointer.x;
+      this.lastY = pointer.y;
     });
     
     // Handle mouse up
@@ -93,27 +105,33 @@ export class Game extends Scene {
     paper.animationState.setAnimation(0, "paper_come", false);
 
     
-    // Set up the drawing area
-    this.add.image(1410, 450, 'fly-drawing');
+    // First, add the drawing area base image (the fly without coloring)
+    const flyDrawing = this.add.image(1410, 450, 'fly-drawing');
+    flyDrawing.setDepth(5);
     
-    // Set up the drawing structure
+    // Create a renderTexture that will be used for drawing
+    // This needs to be the same size as your butterfly image
+    this.renderTexture = this.add.renderTexture(1010, 150, 800, 600);
+    this.renderTexture.setDepth(10);
     
-    // Create a mask using the butterfly outline
+    // Clear the texture to transparent
+    this.renderTexture.clear();
+    
+    // Create mask with the butterfly outline
     const maskImage = this.make.image({
       x: 1410,
-      y: 450, 
+      y: 450,
       key: 'fly-overlay',
       add: false
     });
     
-    // Create bitmap mask from the butterfly image
-    this.mask = new Phaser.Display.Masks.BitmapMask(this, maskImage);
-    
-    // Apply mask to graphics
-    this.graphics.setMask(this.mask);
+    // Apply the mask to the renderTexture
+    const mask = maskImage.createBitmapMask();
+    this.renderTexture.setMask(mask);
     
     // Show the butterfly overlay on top
-    this.add.image(1410, 450, 'fly-overlay').setDepth(15);
+    const flyOverlay = this.add.image(1410, 450, 'fly-overlay');
+    flyOverlay.setDepth(15);
 
 
 
