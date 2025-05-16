@@ -13,6 +13,7 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game-container',
   backgroundColor: '#028af8',
   scene: [MainGame],
+  autoFocus: true,
   plugins: {
     scene: [
         { key: "spine.SpinePlugin", plugin: spine.SpinePlugin, mapping: "spine" }

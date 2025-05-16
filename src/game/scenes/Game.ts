@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import {countBluePixelsInSnapshot, delay} from "./../utils"
+import { SpineGameObject } from '@esotericsoftware/spine-phaser';
 
 enum State {
   STARTED="STARTED",
@@ -17,6 +18,8 @@ export class Game extends Scene {
   completionCheckTimer: Phaser.Time.TimerEvent;
   drawingCompleted: boolean = false;
   container: Phaser.GameObjects.Container
+  paper: SpineGameObject
+  max: SpineGameObject
 
   constructor() {
     super('Game');
@@ -63,17 +66,69 @@ export class Game extends Scene {
     this.checkCompletionPercentage();
   }
 
-  // TODO
   setupStartedGame() {
 
   }
 
-  // TODO
   setupStartDrawGame() {
 
+    this.paper = this.add.spine(
+      245,
+      1010,
+      "paper-data",
+      "paper-atlas"
+    );
+
+    this.paper.animationState.setAnimation(0, "paper_come", false);
+    // Create a container for our butterfly drawing elements
+    this.container = this.add.container(1410, 450);
+    
+    // Create the base image (blank butterfly)
+    const flyDrawing = this.add.image(0, 0, 'fly-drawing');
+    
+    // Create a masked graphics object for drawing
+    this.graphics = this.add.graphics();
+    
+    // Create the butterfly outline for reference (not visible)
+    const shape = this.add.image( 1410, 405, 'fly-done').setVisible(false);
+    const mask = shape.createBitmapMask();
+    // Add the overlay on top
+    const flyOverlay = this.add.image(0, 0, 'fly-overlay');
+    
+    // Add all elements to the container
+    this.container.add([this.graphics, flyDrawing, flyOverlay]);
+    this.graphics.mask = mask;
+    
+    // Set depths to ensure proper layering
+    this.graphics.setDepth(10);
+    flyDrawing.setDepth(15);
+    flyOverlay.setDepth(15);
+
+      // Make cursor follow the pointer
+      this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+        this.cursor.x = pointer.x;
+        this.cursor.y = pointer.y;
+        
+        // Draw if mouse button is down
+        if (this.isDrawing) {
+          this.draw(pointer.x, pointer.y);
+        }
+      });
+      
+      // Handle mouse down
+      this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          this.isDrawing = true;
+          this.lastX = pointer.x;
+          this.lastY = pointer.y;
+      });
+      
+      // Handle mouse up
+      this.input.on('pointerup', () => {
+        this.isDrawing = false;
+      });
+      
   }
 
-  // TODO
   setupDoneGame() {
 
   }
@@ -119,38 +174,11 @@ export class Game extends Scene {
     this.camera.x = -200
     this.camera.width = 3000
     
-    // Create graphics for drawing
-    this.graphics = this.add.graphics();
-    this.graphics.setDepth(10);
-    
     // Add custom cursor that follows pointer
     this.cursor = this.add.image(0, 0, 'blue-pen');
     this.cursor.setOrigin(0, 0); // Set origin based on where the pen point is
     this.cursor.setScale(0.5); // Scale down the pen image if needed
     this.cursor.setRotation(5/4*Math.PI);
-    
-    // Make cursor follow the pointer
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      this.cursor.x = pointer.x;
-      this.cursor.y = pointer.y;
-      
-      // Draw if mouse button is down
-      if (this.isDrawing) {
-        this.draw(pointer.x, pointer.y);
-      }
-    });
-    
-    // Handle mouse down
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-        this.isDrawing = true;
-        this.lastX = pointer.x;
-        this.lastY = pointer.y;
-    });
-    
-    // Handle mouse up
-    this.input.on('pointerup', () => {
-      this.isDrawing = false;
-    });
     
     // Ensure cursor is always on top
     this.cursor.setDepth(1000);
@@ -166,56 +194,26 @@ export class Game extends Scene {
     // // Foreground layer - x:65.5, y:-236, size: 3141x608
     const foreground = this.add.image(1540, 740, 'background-foreground');
     foreground.setScale(1);
-    
-    // // Add environment elements
-    // // Pond element - size: 1483x479, position: x:1233.5, y:-204.5
     const pond = this.add.image(2800, 700, 'pond');
     pond.setScale(1);
 
-    const paper = this.add.spine(
-      245,
-      1010,
-      "paper-data",
-      "paper-atlas"
-    );
-
-    paper.animationState.setAnimation(0, "paper_come", false);
-    // Create a container for our butterfly drawing elements
-    this.container = this.add.container(1410, 450);
-    
-    // Create the base image (blank butterfly)
-    const flyDrawing = this.add.image(0, 0, 'fly-drawing');
-    
-    // Create a masked graphics object for drawing
-    this.graphics = this.add.graphics();
-    
-    // Create the butterfly outline for reference (not visible)
-    const shape = this.add.image( 1410, 405, 'fly-done').setVisible(false);
-    const mask = shape.createBitmapMask();
-    // Add the overlay on top
-    const flyOverlay = this.add.image(0, 0, 'fly-overlay');
-    
-    // Add all elements to the container
-    this.container.add([this.graphics, flyDrawing, flyOverlay]);
-    this.graphics.mask = mask;
-    
-    // Set depths to ensure proper layering
-    this.graphics.setDepth(10);
-    flyDrawing.setDepth(15);
-    flyOverlay.setDepth(15);
-
-    const max = this.add.spine(
+    this.max = this.add.spine(
       445,
       1010,
       "max-data",
       "max-atlas"
     );
-    max.setScale(0.4)
+    this.max.setScale(0.4)
 
-    max.animationState.setAnimation(0, "idle normal", true);
+    this.max.animationState.setAnimation(0, "idle_smile_pallete", true);
+    this.max.depth = 1000
+
+    this.game.events.on(State.START_DRAW, () => {
+      this.setupStartDrawGame()
+    })
 
     this.game.events.on(State.DONE, () => {
-      paper.animationState.setAnimation(0, "paper_go", false);
+      this.paper.animationState.setAnimation(0, "paper_go", false);
       this.container.destroy()
       this.flyDoneAnimation()
       this.sound.play("0069");
@@ -224,12 +222,14 @@ export class Game extends Scene {
     this.sound.play("Scene1", {
       loop: true
     });
-
-    delay(0).then(() => this.sound.play("0001"))
-    delay(2500).then(() => {
-      this.sound.play("0033")
-      delay(2500).then(() => this.sound.play("0034"))
+    const initSound = this.sound.add("0001");
+    const letsDraw = this.sound.add("0033")
+    initSound.on("complete", () => {
+      letsDraw.on("complete", () => this.sound.play("0034"));
+      letsDraw.play()
+      this.game.events.emit(State.START_DRAW)
     })
+    initSound.play();
   }
 
   flyDoneAnimation() {
