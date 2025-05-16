@@ -66,7 +66,7 @@ export class Game extends Scene {
     this.checkCompletionPercentage();
   }
 
-  setupStartedGame() {
+  async setupStartedGame() {
 
   }
 
@@ -82,6 +82,8 @@ export class Game extends Scene {
     this.paper.animationState.setAnimation(0, "paper_come", false);
     
     await delay(1000)
+
+    this.max.animationState.setAnimation(0, "idle_smile_pallete", true);
 
     // Add custom cursor that follows pointer
     this.cursor = this.add.image(0, 0, 'blue-pen');
@@ -141,8 +143,12 @@ export class Game extends Scene {
       
   }
 
-  setupDoneGame() {
-
+  async setupDoneGame() {
+    this.paper.animationState.setAnimation(0, "paper_go", false);
+    this.container.destroy()
+    this.flyDoneAnimation()
+    this.sound.play("0069");
+    this.cursor.destroy()
   }
 
   /**
@@ -218,10 +224,7 @@ export class Game extends Scene {
     })
 
     this.game.events.on(State.DONE, () => {
-      this.paper.animationState.setAnimation(0, "paper_go", false);
-      this.container.destroy()
-      this.flyDoneAnimation()
-      this.sound.play("0069");
+      this.setupDoneGame()
     })
 
     this.sound.play("Scene1", {
