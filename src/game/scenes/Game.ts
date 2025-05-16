@@ -28,28 +28,21 @@ export class Game extends Scene {
   private lastX: number = 0;
   private lastY: number = 0;
   
-  // Convert world coordinates to container-local coordinates
   worldToLocal(x: number, y: number): {x: number, y: number} {
     return {
-      x: x - 1410,  // Container's x position
-      y: y - 450    // Container's y position
+      x: x - 1410, 
+      y: y - 450   
     };
   }
   
-  // Convert container-local coordinates to world coordinates
   localToWorld(x: number, y: number): {x: number, y: number} {
     return {
-      x: x + 1410,  // Container's x position
-      y: y + 450    // Container's y position
+      x: x + 1410,  
+      y: y + 450 
     };
   }
   
-  /**
-   * Draw function to handle brush painting
-   */
   draw(x: number, y: number): void {
-    // Only draw if point is inside butterfly area
-    // Convert to local coordinates for drawing in the container
     const localCurrent = this.worldToLocal(x, y);
     const localLast = this.worldToLocal(this.lastX, this.lastY);
     
@@ -58,6 +51,7 @@ export class Game extends Scene {
     this.graphics.moveTo(localLast.x, localLast.y);
     this.graphics.lineTo(localCurrent.x, localCurrent.y);
     this.graphics.strokePath();
+    
     // Store world coordinates for next draw call
     this.lastX = x;
     this.lastY = y;
@@ -85,58 +79,42 @@ export class Game extends Scene {
 
     this.max.animationState.setAnimation(0, "idle_smile_pallete", true);
 
-    // Add custom cursor that follows pointer
     this.cursor = this.add.image(0, 0, 'blue-pen');
-    this.cursor.setOrigin(0, 0); // Set origin based on where the pen point is
-    this.cursor.setScale(0.5); // Scale down the pen image if needed
+    this.cursor.setOrigin(0, 0); 
+    this.cursor.setScale(0.5);
     this.cursor.setRotation(-1/4 * Math.PI);
     
-    // Ensure cursor is always on top
     this.cursor.setDepth(999);
 
     // Create a container for our butterfly drawing elements
     this.container = this.add.container(1410, 450);
-    
-    // Create the base image (blank butterfly)
     const flyDrawing = this.add.image(0, 0, 'fly-drawing');
-    
-    // Create a masked graphics object for drawing
     this.graphics = this.add.graphics();
-    
-    // Create the butterfly outline for reference (not visible)
     const shape = this.add.image( 1410, 405, 'fly-done').setVisible(false);
     const mask = shape.createBitmapMask();
-    // Add the overlay on top
     const flyOverlay = this.add.image(0, 0, 'fly-overlay');
-    
-    // Add all elements to the container
     this.container.add([this.graphics, flyDrawing, flyOverlay]);
     this.graphics.mask = mask;
-    
     // Set depths to ensure proper layering
     this.graphics.setDepth(10);
     flyDrawing.setDepth(15);
     flyOverlay.setDepth(15);
 
-    // Make cursor follow the pointer
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       this.cursor.x = pointer.x;
       this.cursor.y = pointer.y;
       
-      // Draw if mouse button is down
       if (this.isDrawing) {
         this.draw(pointer.x, pointer.y);
       }
     });
     
-    // Handle mouse down
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         this.isDrawing = true;
         this.lastX = pointer.x;
         this.lastY = pointer.y;
     });
     
-    // Handle mouse up
     this.input.on('pointerup', () => {
       this.isDrawing = false;
     });
@@ -173,9 +151,6 @@ export class Game extends Scene {
     
     const totalDrawableArea = 376876;
     const drawed = await this.calculateBluePixel()
-    // console.log("#### this.calculateBluePixel():", await this.calculateBluePixel())
-    
-    console.log(`Drawing completion: ${drawed} / (Area: ${totalDrawableArea.toFixed(0)}px²)`); 
     
     if ((totalDrawableArea - drawed  < 50 || totalDrawableArea < drawed) && !this.drawingCompleted) {
       console.log('done');
@@ -185,24 +160,17 @@ export class Game extends Scene {
   }
   
   create() {
-    // Hide default cursor
     this.input.setDefaultCursor('none');
     
     this.camera = this.cameras.main;
     this.camera.x = -200
     this.camera.width = 3000
     
-    
-
-    // Add the background layers in correct order with proper positioning based on lesson_colors_psd.asset
-    
-    // Base background layer - x:63.5, y:0, size: 3137x1080
     const backgroundBase = this.add.image(1600, 540, 'background-base');
     backgroundBase.setScale(1)
     const middleBackground = this.add.image(1660, 270, 'background-middle');
     middleBackground.setScale(1)
 
-    // // Foreground layer - x:65.5, y:-236, size: 3141x608
     const foreground = this.add.image(1540, 740, 'background-foreground');
     foreground.setScale(1);
     const pond = this.add.image(2800, 700, 'pond');
@@ -260,7 +228,6 @@ export class Game extends Scene {
     this.load.image('background-middle', 'assets/Arts/Image/269.png');
     this.load.image('background-foreground', 'assets/Arts/Image/274.png');
     
-    // // Pond element - size: 1483x479, position: x:1233.5, y:-204.5
     this.load.image('pond', 'assets/Arts/Image/398.png');
 
     this.load.image('fly-overlay', 'assets/Arts/fly_overlay.png');
@@ -275,6 +242,11 @@ export class Game extends Scene {
 
     this.load.spineJson("fly-data", "assets/spine_animations/fly.json");
     this.load.spineAtlas("fly-atlas", "assets/spine_animations/fly.atlas.txt");
+
+
+    this.load.spineJson("tree-data", "assets/spine_animations/tree.json");
+    this.load.spineAtlas("tree-atlas", "assets/spine_animations/tree.atlas.txt");
+
 
     this.load.spineBinary("max-data", "assets/spine_animations/max/people_Max_pal.skel.bytes");
     this.load.spineAtlas("max-atlas", "assets/spine_animations/max/people_Max_pal.atlas.txt");
