@@ -70,7 +70,7 @@ export class Game extends Scene {
 
   }
 
-  setupStartDrawGame() {
+  async setupStartDrawGame() {
 
     this.paper = this.add.spine(
       245,
@@ -80,6 +80,18 @@ export class Game extends Scene {
     );
 
     this.paper.animationState.setAnimation(0, "paper_come", false);
+    
+    await delay(1000)
+
+    // Add custom cursor that follows pointer
+    this.cursor = this.add.image(0, 0, 'blue-pen');
+    this.cursor.setOrigin(0, 0); // Set origin based on where the pen point is
+    this.cursor.setScale(0.5); // Scale down the pen image if needed
+    this.cursor.setRotation(-1/4 * Math.PI);
+    
+    // Ensure cursor is always on top
+    this.cursor.setDepth(999);
+
     // Create a container for our butterfly drawing elements
     this.container = this.add.container(1410, 450);
     
@@ -104,28 +116,28 @@ export class Game extends Scene {
     flyDrawing.setDepth(15);
     flyOverlay.setDepth(15);
 
-      // Make cursor follow the pointer
-      this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-        this.cursor.x = pointer.x;
-        this.cursor.y = pointer.y;
-        
-        // Draw if mouse button is down
-        if (this.isDrawing) {
-          this.draw(pointer.x, pointer.y);
-        }
-      });
+    // Make cursor follow the pointer
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      this.cursor.x = pointer.x;
+      this.cursor.y = pointer.y;
       
-      // Handle mouse down
-      this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-          this.isDrawing = true;
-          this.lastX = pointer.x;
-          this.lastY = pointer.y;
-      });
-      
-      // Handle mouse up
-      this.input.on('pointerup', () => {
-        this.isDrawing = false;
-      });
+      // Draw if mouse button is down
+      if (this.isDrawing) {
+        this.draw(pointer.x, pointer.y);
+      }
+    });
+    
+    // Handle mouse down
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        this.isDrawing = true;
+        this.lastX = pointer.x;
+        this.lastY = pointer.y;
+    });
+    
+    // Handle mouse up
+    this.input.on('pointerup', () => {
+      this.isDrawing = false;
+    });
       
   }
 
@@ -174,14 +186,7 @@ export class Game extends Scene {
     this.camera.x = -200
     this.camera.width = 3000
     
-    // Add custom cursor that follows pointer
-    this.cursor = this.add.image(0, 0, 'blue-pen');
-    this.cursor.setOrigin(0, 0); // Set origin based on where the pen point is
-    this.cursor.setScale(0.5); // Scale down the pen image if needed
-    this.cursor.setRotation(5/4*Math.PI);
     
-    // Ensure cursor is always on top
-    this.cursor.setDepth(1000);
 
     // Add the background layers in correct order with proper positioning based on lesson_colors_psd.asset
     
@@ -225,6 +230,7 @@ export class Game extends Scene {
     const initSound = this.sound.add("0001");
     const letsDraw = this.sound.add("0033")
     initSound.on("complete", () => {
+      this.max.animationState.setAnimation(0, "idle_speak_pallete", false);
       letsDraw.on("complete", () => this.sound.play("0034"));
       letsDraw.play()
       this.game.events.emit(State.START_DRAW)
